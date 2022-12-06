@@ -9,6 +9,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <netdb.h>
 
 #include "ftpArgument.c"
 
@@ -18,7 +19,7 @@
 int main(int argc, char **argv) {
   char ftpArgument[ARG_SIZE + 1];
   if (argc < 2) {
-    printf("Usage ftpArgument ftp://[user:password@]host/path\n");
+    printf("ftp://ftp.up.pt/pub/kodi/timestamp.txt");
     strncpy(ftpArgument, DEFAULT_ARG, ARG_SIZE);
     // ftpArgument[ARG_SIZE]=0;
   } else {
@@ -29,20 +30,27 @@ int main(int argc, char **argv) {
   printf("Hello world! arg is : %s\n", ftpArgument);
   if (parseFTPPath(ftpArgument, &ftpPath)) {
     printFtpPath(&ftpPath);
+    printf("%d", 2);
   } else {
     printf("Error while parsing FTP path\n");
   }
+
+  printf("%d", 2);
 
   int sockfd;
   struct sockaddr_in server_addr;
   char buf[BUFSIZ];
   size_t bytes;
 
+  printf("%d", 2);
+
+  char * server_ip;
+  server_ip = inet_ntoa(*((struct in_addr *)gethostbyname(ftpPath.host)->h_addr));
   /*server address handling*/
   bzero((char *)&server_addr, sizeof(server_addr));
   server_addr.sin_family = AF_INET;
   server_addr.sin_addr.s_addr =
-      inet_addr(SERVER_ADDR); /*32 bit Internet address network byte ordered*/
+      inet_addr(server_ip); /*32 bit Internet address network byte ordered*/
   server_addr.sin_port =
       htons(SERVER_PORT); /*server TCP port must be network byte ordered */
 
@@ -59,21 +67,23 @@ int main(int argc, char **argv) {
     exit(-1);
   }
 
+
   recv(sockfd, buf, BUFSIZ, 0);
   if (buf[0] != '2') {
     perror("Request not completed");
     exit(-1);
   }
 
-  buf = strcat("user ", user);
+  buf[BUFSIZ] = strcat("user ",ftpPath.user);
   write(sockfd, buf, strlen(buf));
   recv(sockfd, buf, BUFSIZ, 0);
 
-  buf = strcat("pass ", password);
+  buf[BUFSIZ] = strcat("pass ", ftpPath.password);
   write(sockfd, buf, strlen(buf));
   recv(sockfd, buf, BUFSIZ, 0);
 
   write(sockfd, "pasv", strlen("pasv"));
+  recv(sockfd, buf, BUFSIZ, 0);
 
   /*send a string to the server*/
   bytes = write(sockfd, buf, strlen(buf));

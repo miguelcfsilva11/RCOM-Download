@@ -3,7 +3,7 @@
 #include <string.h>
 
 #define ARG_SIZE 100
-#define DEFAULT_ARG "ftp://user:password@host/foo/bar.txt"
+#define DEFAULT_ARG "ftp://ftp.up.pt/pub/kodi/timestamp.txt"
 #define PROTOCOL_SIZE 6
 #define PROTOCOL "ftp://"
 
@@ -25,6 +25,7 @@ void printFtpPath(FtpPath* ftpPath) {
     printf("user:%s\n", ftpPath->user);
   }
 }
+
 int checkProtocol(const char* ftpString, FtpPath* ftpPath) {
   char protocol[PROTOCOL_SIZE + 1];
   strncpy(protocol, ftpString, PROTOCOL_SIZE);
