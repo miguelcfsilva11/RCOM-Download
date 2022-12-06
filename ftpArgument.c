@@ -91,6 +91,8 @@ int parseFTPPath(const char* ftpString, FtpPath* ftpPath) {
     return parseFTPPathAuth(ftpString, ftpPath, i);
   } else {
     ftpPath->auth = 0;
+    strcpy(ftpPath->user,"anonymous");
+    strcpy(ftpPath->password,"larinha");
     return parseFTPPathDefault(ftpString, ftpPath, PROTOCOL_SIZE);
   }
 }
