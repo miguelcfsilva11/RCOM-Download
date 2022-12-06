@@ -16,6 +16,9 @@
 #define SERVER_PORT 21
 
 int main(int argc, char **argv) {
+  //----------------------------
+  //    Getting The ftp URL
+  //----------------------------
   char ftpArgument[ARG_SIZE + 1];
   if (argc < 2) {
     printf("ftp://ftp.up.pt/pub/kodi/timestamp.txt");
@@ -27,6 +30,11 @@ int main(int argc, char **argv) {
   }
   FtpPath ftpPath;
   printf("Hello world! arg is : %s\n", ftpArgument);
+
+  //----------------------------
+  //    Parsing the URL
+  //----------------------------
+
   if (parseFTPPath(ftpArgument, &ftpPath)) {
     printFtpPath(&ftpPath);
     fflush(stdout);
@@ -36,9 +44,12 @@ int main(int argc, char **argv) {
   int sockfd;
   struct sockaddr_in server_addr;
   char buf[BUFSIZ];
-  size_t bytes;
 
   struct hostent *h;
+
+  //---------------------------
+  // Translating Host Name To IP Address
+  //---------------------------
   h = gethostbyname(ftpPath.host);
   char *server_ip = inet_ntoa(*((struct in_addr *)h->h_addr));
   printf("Ip address %s\n", server_ip);
@@ -69,7 +80,9 @@ int main(int argc, char **argv) {
     perror("Request not completed");
     exit(-1);
   }
-
+  // ---------------------------
+  //    Establishing Connection
+  // ---------------------------
   memset(buf, 0, BUFSIZ);
   strcpy(buf, "user ");
   strcat(buf, ftpPath.user);
@@ -90,21 +103,74 @@ int main(int argc, char **argv) {
   recv(sockfd, buf, BUFSIZ, 0);
   printf("Server Sent %s\n", buf);
 
-
   memset(buf, 0, BUFSIZ);
   write(sockfd, "pasv\n", strlen("pasv\n"));
   printf("We wrote pasv%s\n", buf);
   recv(sockfd, buf, BUFSIZ, 0);
   printf("Server Sent %s\n", buf);
 
-  /*send a string to the server*/
-  // Esta string não tem nada?
-  bytes = write(sockfd, buf, strlen(buf));
-  if (bytes > 0)
-    printf("Bytes escritos %ld\n", bytes);
-  else {
-    perror("Error while in write()");
+  // ---------------------------
+  //    Established Connection
+  // ---------------------------
+
+  int commaCounter = 0;
+  int fstArg = 0;
+  int sndArg = 0;
+  for (size_t i = 0; i < strlen(buf) && buf[i] != ')'; i++) {
+    if (buf[i] == ',') {
+      commaCounter++;
+      continue;
+    }
+    if (commaCounter == 4) {
+      fstArg *= 10;
+      fstArg += (buf[i] - '0');
+
+    } else if (commaCounter == 5) {
+      sndArg *= 10;
+      sndArg += (buf[i] - '0');
+    }
+  }
+  printf("Calculating port using (%d,%d)\n", fstArg, sndArg);
+  int port = fstArg * 256 + sndArg;
+  printf("Port is : %d\n", port);
+
+  int sockFile;
+  if ((sockFile = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    perror("Error while in socket()");
     exit(-1);
+  }
+
+  server_addr.sin_port = htons(port);
+
+  /*connect to the server*/
+  if (connect(sockFile, (struct sockaddr *)&server_addr, sizeof(server_addr)) <
+      0) {
+    perror("Error while in connect()");
+    exit(-1);
+  }
+
+  //-------------------------------
+  //      Requesting The File
+  //-------------------------------
+  memset(buf, 0, BUFSIZ);
+  strcat(buf, "retr ");
+  strcat(buf, ftpPath.path);
+  strcat(buf, "\n");
+  write(sockfd, buf, strlen(buf));
+  // Recieving Status Response
+  memset(buf, 0, BUFSIZ);
+  recv(sockfd, buf, BUFSIZ, 0);
+  printf("Server Sent %s\n", buf);
+
+  memset(buf, 0, BUFSIZ);
+  FILE* file = fopen("timestamp.txt", "wb");
+
+  while (1) {
+    recv(sockFile, buf, BUFSIZ, 0);
+    if (strlen(buf) == 0)
+      break;
+    fwrite(buf, strlen(buf), 1, file);
+    memset(buf, 0, BUFSIZ);
   }
 
   if (close(sockfd) < 0) {
@@ -112,10 +178,9 @@ int main(int argc, char **argv) {
     exit(-1);
   }
 
-  if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    perror("Error while in socket()");
+  if (close(sockFile) < 0) {
+    perror("Error while in close()");
     exit(-1);
   }
-
   return 0;
 }
