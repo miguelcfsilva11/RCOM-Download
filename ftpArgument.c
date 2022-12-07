@@ -2,15 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ARG_SIZE 100
+#define ARG_SIZE 200
 #define DEFAULT_ARG "ftp://ftp.up.pt/debian/README.html"
+// 
 #define PROTOCOL_SIZE 6
 #define PROTOCOL "ftp://"
 
 typedef struct {
   char protocol[50];
   char host[50];
-  char path[50];
+  char path[100];
   char password[50];
   char user[50];
   int auth;
