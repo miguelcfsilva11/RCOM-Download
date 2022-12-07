@@ -34,13 +34,30 @@ int main(int argc, char **argv) {
   //----------------------------
   //    Parsing the URL
   //----------------------------
-
   if (parseFTPPath(ftpArgument, &ftpPath)) {
     printFtpPath(&ftpPath);
     fflush(stdout);
   } else {
     printf("Error while parsing FTP path\n");
   }
+  // -----------------------------
+  //   Getting the File Name
+  // -----------------------------
+  char filename[51];
+  int i = 0;
+  int filenameStart=0; 
+  while (ftpPath.path[i] != 0) {
+    if (ftpPath.path[i] == '/') {
+      filenameStart = i+1;
+    }
+    i++;
+  }
+  strncpy(filename,ftpPath.path + filenameStart,50);
+  filename[50]=0;
+  printf("Got filename : %si\n",filename);
+  printf("filenameStart is :%d",filenameStart);
+
+
   int sockfd;
   struct sockaddr_in server_addr;
   char buf[BUFSIZ];
@@ -163,7 +180,7 @@ int main(int argc, char **argv) {
   printf("Server Sent %s\n", buf);
 
   memset(buf, 0, BUFSIZ);
-  FILE* file = fopen("timestamp.txt", "wb");
+  FILE *file = fopen(filename, "wb");
 
   while (1) {
     recv(sockFile, buf, BUFSIZ, 0);
