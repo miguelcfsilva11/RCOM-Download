@@ -21,7 +21,10 @@ int main(int argc, char **argv) {
   //----------------------------
   char ftpArgument[ARG_SIZE + 1];
   if (argc < 2) {
-    printf("ftp://ftp.up.pt/pub/kodi/timestamp.txt");
+    printf("Nothing Specified usage is :\n");
+    printf("download ftp://[user:password]host/url [newfilename]\n");
+    printf("Using Defaults....\n");
+    printf("%s\n", DEFAULT_ARG);
     strncpy(ftpArgument, DEFAULT_ARG, ARG_SIZE);
     // ftpArgument[ARG_SIZE]=0;
   } else {
@@ -44,19 +47,24 @@ int main(int argc, char **argv) {
   //   Getting the File Name
   // -----------------------------
   char filename[51];
-  int i = 0;
-  int filenameStart=0; 
-  while (ftpPath.path[i] != 0) {
-    if (ftpPath.path[i] == '/') {
-      filenameStart = i+1;
+  if (argc <= 2) {
+    int i = 0;
+    int filenameStart = 0;
+    while (ftpPath.path[i] != 0) {
+      if (ftpPath.path[i] == '/') {
+        filenameStart = i + 1;
+      }
+      i++;
     }
-    i++;
+    strncpy(filename, ftpPath.path + filenameStart, 50);
+    filename[50] = 0;
+  } else {
+    printf("Will it break here ??%s\n",argv[2]);
+    strncpy(filename, argv[2], 50);
+    filename[50] = 0;
   }
-  strncpy(filename,ftpPath.path + filenameStart,50);
-  filename[50]=0;
-  printf("Got filename : %si\n",filename);
-  printf("filenameStart is :%d",filenameStart);
 
+  printf("Got filename : %s\n", filename);
 
   int sockfd;
   struct sockaddr_in server_addr;
