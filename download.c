@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #include "ftpArgument.c"
+#include <stdarg.h>
 
 #define BUFSIZE 1000 
 #define SERVER_PORT 21
@@ -19,10 +20,17 @@
 int READING_MULTILINE = 0;
 char MULTILINE_CODE[3];
 
+void create_message(char * dest,const char*command,const char* arg){
+    //memset(dest,0,BUFSIZE);
+    dest[0] =0;
+    strcat(dest,command);
+    strcat(dest,arg);
+    strcat(dest,"\n");
+}
 int read_message(int socketFd, char *buf, int size) {
+  memset(buf,0,size);
   buf[3] = 0;
   read(socketFd, buf, 3);
-  // printf("Code: %s!\n", buf);
   if (READING_MULTILINE && strcmp(buf, MULTILINE_CODE)) {
     READING_MULTILINE = 0;
   }
@@ -162,8 +170,6 @@ int main(int argc, char **argv) {
     exit(-1);
   }
 
-  printf("Here\n");
-  // recv(sockfd, buf, BUFSIZE, 0);
   read_message(sockfd, buf, BUFSIZE);
   printf("Server sent %s\n", buf);
   if (buf[0] != '2') {
@@ -173,32 +179,20 @@ int main(int argc, char **argv) {
   // ---------------------------
   //    Establishing Connection
   // ---------------------------
-  memset(buf, 0, BUFSIZE);
-  strcpy(buf, "user ");
-  strcat(buf, ftpPath.user);
-  strcat(buf, "\n");
+  create_message(buf,"user ",ftpPath.user);
   printf("Message is %s\n", buf);
   write(sockfd, buf, strlen(buf));
-  memset(buf, 0, BUFSIZE);
-  // recv(sockfd, buf, BUFSIZE, 0);
   read_message(sockfd, buf, BUFSIZE);
   printf("Server Sent %s\n", buf);
 
-  memset(buf, 0, BUFSIZE);
-  strcpy(buf, "pass ");
-  strcat(buf, ftpPath.password);
-  strcat(buf, "\n");
+  create_message(buf,"pass ",ftpPath.password);
   printf("Message is %s\n", buf);
   write(sockfd, buf, strlen(buf));
-  memset(buf, 0, BUFSIZE);
-  // recv(sockfd, buf, BUFSIZE, 0);
   read_message(sockfd, buf, BUFSIZE);
   printf("Server Sent %s\n", buf);
 
-  memset(buf, 0, BUFSIZE);
   write(sockfd, "pasv\n", strlen("pasv\n"));
   printf("We wrote pasv%s\n", buf);
-  // recv(sockfd, buf, BUFSIZE, 0);
   read_message(sockfd, buf, BUFSIZE);
   printf("Server Sent %s\n", buf);
 
@@ -245,24 +239,18 @@ int main(int argc, char **argv) {
   //-------------------------------
   //      Requesting The File
   //-------------------------------
-  memset(buf, 0, BUFSIZE);
-  strcat(buf, "retr ");
-  strcat(buf, ftpPath.path);
-  strcat(buf, "\n");
+  create_message(buf,"retr ",ftpPath.path);
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
-  memset(buf, 0, BUFSIZE);
   read_message(sockfd, buf, BUFSIZE);
   printf("Server Sent %s\n", buf);
 
-  memset(buf, 0, BUFSIZE);
   FILE *file = fopen(filename, "wb");
 
   int bytes = -1;
   do {
     bytes = read(sockFile, buf, BUFSIZE);
-    fwrite(buf, strlen(buf), 1, file);
-    memset(buf, 0, BUFSIZE);
+    fwrite(buf,bytes, 1, file);
   } while (bytes >0);
 
   if (close(sockfd) < 0) {
