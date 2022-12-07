@@ -129,7 +129,6 @@ int main(int argc, char **argv) {
   }
 
   printf("Got filename : %s\n", filename);
-
   int sockfd;
   struct sockaddr_in server_addr;
   char buf[BUFSIZE];

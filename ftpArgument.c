@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ARG_SIZE 200
+#define ARG_SIZE 400
 #define DEFAULT_ARG "ftp://ftp.up.pt/debian/README.html"
 // 
 #define PROTOCOL_SIZE 6
@@ -10,7 +10,7 @@
 
 typedef struct {
   char protocol[50];
-  char host[50];
+  char host[100];
   char path[100];
   char password[50];
   char user[50];
@@ -73,6 +73,8 @@ int parseFTPPathAuth(const char* ftpString, FtpPath* ftpPath, int atLocation) {
   return parseFTPPathDefault(ftpString, ftpPath, atLocation + 1);
 }
 int parseFTPPath(const char* ftpString, FtpPath* ftpPath) {
+  // Guarantees that the strings will finish
+  memset(ftpPath,0,sizeof(FtpPath));
   if (!checkProtocol(ftpString, ftpPath)) {
     return 0;
   }
@@ -97,25 +99,3 @@ int parseFTPPath(const char* ftpString, FtpPath* ftpPath) {
     return parseFTPPathDefault(ftpString, ftpPath, PROTOCOL_SIZE);
   }
 }
-
-// int main(int argc, char* argv[]) {
-// char ftpArgument[ARG_SIZE + 1];
-// if (argc < 2) {
-// printf("Usage ftpArgument ftp://[user:password@]host/path\n");
-// strncpy(ftpArgument, DEFAULT_ARG, ARG_SIZE);
-// // ftpArgument[ARG_SIZE]=0;
-// } else {
-// strncpy(ftpArgument, argv[1], ARG_SIZE);
-// ftpArgument[ARG_SIZE] = 0;
-// }
-// FtpPath path;
-// FtpPath* ftpPath = &path;
-// printf("Hello world! arg is : %s\n", ftpArgument);
-// if (parseFTPPath(ftpArgument, ftpPath)) {
-// printFtpPath(ftpPath);
-// } else {
-// printf("Error while parsing FTP path\n");
-// }
-
-// return 0;
-// }
