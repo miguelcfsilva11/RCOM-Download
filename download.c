@@ -13,7 +13,71 @@
 
 #include "ftpArgument.c"
 
+#define BUFSIZE 1000 
 #define SERVER_PORT 21
+
+int READING_MULTILINE = 0;
+char MULTILINE_CODE[3];
+
+int read_message(int socketFd, char *buf, int size) {
+  buf[3] = 0;
+  read(socketFd, buf, 3);
+  // printf("Code: %s!\n", buf);
+  if (READING_MULTILINE && strcmp(buf, MULTILINE_CODE)) {
+    READING_MULTILINE = 0;
+  }
+  read(socketFd, buf + 3, 1);
+  printf("%s", buf);
+  if (buf[3] == '-') {
+    READING_MULTILINE = 1;
+  }
+  char gotCariage = 0;
+  char ended = 0;
+  int i = 4;
+  char startReadingCode = 0;
+  char code[4];
+  int code_i = 0;
+  for (; i < size && !ended; i++) {
+    read(socketFd, buf + i, 1);
+    printf("%c", buf[i]);
+    if (buf[i] == '\r') {
+      gotCariage = 1;
+    }
+    if (buf[i] == '\n') {
+      if (gotCariage && !READING_MULTILINE) {
+        ended = 1;
+        gotCariage = 0;
+      }
+      startReadingCode = 1;
+    } else if (startReadingCode) {
+      code[code_i] = buf[i];
+      code_i++;
+      if (code_i == 4) {
+        startReadingCode = 0;
+        code_i = 0;
+        if (code[3] == '-') {
+          continue;
+        }
+        code[3] = 0;
+        if (strcmp(code, MULTILINE_CODE)) {
+          READING_MULTILINE = 0;
+        }
+      }
+    }
+  }
+  if (ended && !READING_MULTILINE) {
+    return -1;
+  }
+  // There is still reading left
+  if (READING_MULTILINE) {
+    printf("\nMultiline Reply\n");
+  }
+  if (i >= size) {
+    printf(
+        "There is still reading left to do, message doesnt fit this buffer!\n");
+  }
+  return i;
+}
 
 int main(int argc, char **argv) {
   //----------------------------
@@ -31,17 +95,17 @@ int main(int argc, char **argv) {
     strncpy(ftpArgument, argv[1], ARG_SIZE);
     ftpArgument[ARG_SIZE] = 0;
   }
-  FtpPath ftpPath;
   printf("Hello world! arg is : %s\n", ftpArgument);
 
   //----------------------------
   //    Parsing the URL
   //----------------------------
+  FtpPath ftpPath;
   if (parseFTPPath(ftpArgument, &ftpPath)) {
     printFtpPath(&ftpPath);
-    fflush(stdout);
   } else {
-    printf("Error while parsing FTP path\n");
+    printf("Error while parsing FTP path\n !Shuting Down!");
+    exit(1);
   }
   // -----------------------------
   //   Getting the File Name
@@ -59,7 +123,7 @@ int main(int argc, char **argv) {
     strncpy(filename, ftpPath.path + filenameStart, 50);
     filename[50] = 0;
   } else {
-    printf("Will it break here ??%s\n",argv[2]);
+    printf("Will it break here ??%s\n", argv[2]);
     strncpy(filename, argv[2], 50);
     filename[50] = 0;
   }
@@ -68,7 +132,7 @@ int main(int argc, char **argv) {
 
   int sockfd;
   struct sockaddr_in server_addr;
-  char buf[BUFSIZ];
+  char buf[BUFSIZE];
 
   struct hostent *h;
 
@@ -99,7 +163,9 @@ int main(int argc, char **argv) {
     exit(-1);
   }
 
-  recv(sockfd, buf, BUFSIZ, 0);
+  printf("Here\n");
+  // recv(sockfd, buf, BUFSIZE, 0);
+  read_message(sockfd, buf, BUFSIZE);
   printf("Server sent %s\n", buf);
   if (buf[0] != '2') {
     perror("Request not completed");
@@ -108,34 +174,37 @@ int main(int argc, char **argv) {
   // ---------------------------
   //    Establishing Connection
   // ---------------------------
-  memset(buf, 0, BUFSIZ);
+  memset(buf, 0, BUFSIZE);
   strcpy(buf, "user ");
   strcat(buf, ftpPath.user);
   strcat(buf, "\n");
   printf("Message is %s\n", buf);
   write(sockfd, buf, strlen(buf));
-  memset(buf, 0, BUFSIZ);
-  recv(sockfd, buf, BUFSIZ, 0);
+  memset(buf, 0, BUFSIZE);
+  // recv(sockfd, buf, BUFSIZE, 0);
+  read_message(sockfd, buf, BUFSIZE);
   printf("Server Sent %s\n", buf);
 
-  memset(buf, 0, BUFSIZ);
+  memset(buf, 0, BUFSIZE);
   strcpy(buf, "pass ");
   strcat(buf, ftpPath.password);
   strcat(buf, "\n");
   printf("Message is %s\n", buf);
   write(sockfd, buf, strlen(buf));
-  memset(buf, 0, BUFSIZ);
-  recv(sockfd, buf, BUFSIZ, 0);
+  memset(buf, 0, BUFSIZE);
+  // recv(sockfd, buf, BUFSIZE, 0);
+  read_message(sockfd, buf, BUFSIZE);
   printf("Server Sent %s\n", buf);
 
-  memset(buf, 0, BUFSIZ);
+  memset(buf, 0, BUFSIZE);
   write(sockfd, "pasv\n", strlen("pasv\n"));
   printf("We wrote pasv%s\n", buf);
-  recv(sockfd, buf, BUFSIZ, 0);
+  // recv(sockfd, buf, BUFSIZE, 0);
+  read_message(sockfd, buf, BUFSIZE);
   printf("Server Sent %s\n", buf);
 
   // ---------------------------
-  //    Established Connection
+  //    Calculating The Port
   // ---------------------------
 
   int commaCounter = 0;
@@ -177,26 +246,25 @@ int main(int argc, char **argv) {
   //-------------------------------
   //      Requesting The File
   //-------------------------------
-  memset(buf, 0, BUFSIZ);
+  memset(buf, 0, BUFSIZE);
   strcat(buf, "retr ");
   strcat(buf, ftpPath.path);
   strcat(buf, "\n");
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
-  memset(buf, 0, BUFSIZ);
-  recv(sockfd, buf, BUFSIZ, 0);
+  memset(buf, 0, BUFSIZE);
+  read_message(sockfd, buf, BUFSIZE);
   printf("Server Sent %s\n", buf);
 
-  memset(buf, 0, BUFSIZ);
+  memset(buf, 0, BUFSIZE);
   FILE *file = fopen(filename, "wb");
 
-  while (1) {
-    recv(sockFile, buf, BUFSIZ, 0);
-    if (strlen(buf) == 0)
-      break;
+  int bytes = -1;
+  do {
+    bytes = read(sockFile, buf, BUFSIZE);
     fwrite(buf, strlen(buf), 1, file);
-    memset(buf, 0, BUFSIZ);
-  }
+    memset(buf, 0, BUFSIZE);
+  } while (bytes >0);
 
   if (close(sockfd) < 0) {
     perror("Error while in close()");
