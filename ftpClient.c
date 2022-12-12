@@ -91,11 +91,11 @@ int read_message(int socketFd, char *buf, int size) {
 
 void getIpAddress() {
   h = gethostbyname(ftpPath.host);
-  printf("Aqui está bem\n");
-  fflush_unlocked(stdout);
+  if( NULL == h){
+     printf("Error getting the ip: %s\n",hstrerror(h_errno));
+     exit(-1);
+    }
   server_ip = inet_ntoa(*((struct in_addr *)h->h_addr));
-  printf("Aqui está bem\n");
-  fflush_unlocked(stdout);
   printf("Ip address %s\n", server_ip);
   /*server address handling*/
   bzero((char *)&server_addr, sizeof(server_addr));
