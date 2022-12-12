@@ -12,7 +12,7 @@
 
 
 
-#define DOWNLOAD_BUF_SIZE 5
+#define DOWNLOAD_BUF_SIZE 8000
 
 int main(int argc, char **argv) {
   //----------------------------

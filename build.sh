@@ -3,5 +3,5 @@
 # Stops in at first error.
 set -xe
 COMMON_CFLAGS="-Wall -Wextra -pedantic"
-gcc $COMMON_CFLAGS ./$1.c -o $1
+gcc $COMMON_CFLAGS ftpPath.c ftpClient.c download.c -o download
 
