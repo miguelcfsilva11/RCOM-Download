@@ -11,6 +11,7 @@
 
 #define BUFSIZE 1000
 #define SERVER_PORT 21
+#define NICEPRINT "------> "
 
 FtpPath ftpPath;
 int READING_MULTILINE = 0;
@@ -119,7 +120,6 @@ void getIpAddress() {
   }
 
   read_message(sockfd, buf, BUFSIZE);
-  printf("Server sent %s\n", buf);
   if (buf[0] != '2') {
     perror("Request not completed");
     exit(-1);
@@ -128,23 +128,20 @@ void getIpAddress() {
 
 void ftpLogIn() {
   create_message(buf, "user ", ftpPath.user);
-  printf("Message is %s\n", buf);
+  printf("%s%s\n",NICEPRINT, buf);
   write(sockfd, buf, strlen(buf));
   read_message(sockfd, buf, BUFSIZE);
-  printf("Server Sent %s\n", buf);
 
   create_message(buf, "pass ", ftpPath.password);
-  printf("Message is %s\n", buf);
+  printf("%s%s\n",NICEPRINT, buf);
   write(sockfd, buf, strlen(buf));
   read_message(sockfd, buf, BUFSIZE);
-  printf("Server Sent %s\n", buf);
 }
 
 void ftpEnterPassiveMode() {
   write(sockfd, "pasv\n", strlen("pasv\n"));
-  printf("We wrote pasv%s\n", buf);
+  printf("%spasv\n\n",NICEPRINT);
   read_message(sockfd, buf, BUFSIZE);
-  printf("Server Sent %s\n", buf);
   
 }
 
@@ -185,11 +182,10 @@ int ftpConnectDownloadSocket(int port) {
     exit(-1);
   }
   create_message(buf, "retr ", ftpPath.path);
+  printf("%s%s\n",NICEPRINT,buf);
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
   read_message(sockfd, buf, BUFSIZE);
-  printf("Server Sent %s\n", buf);
-
   return sockFile;
 }
 

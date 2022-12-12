@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
   char ftpArgument[ARG_SIZE + 1];
   if (argc < 2) {
     printf("Nothing Specified usage is :\n");
-    printf("download ftp://[user:password]host/url [newfilename]\n");
+    printf("download ftp://[user:password]@host/url [newfilename]\n");
     printf("Using Defaults....\n");
     printf("%s\n", DEFAULT_ARG);
     strncpy(ftpArgument, DEFAULT_ARG, ARG_SIZE);
