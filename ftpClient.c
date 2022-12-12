@@ -93,7 +93,7 @@ void getIpAddress() {
   h = gethostbyname(ftpPath.host);
   printf("Aqui está bem\n");
   fflush_unlocked(stdout);
-  server_ip = inet_ntoa(*((struct in_addr *)*h->h_addr));
+  server_ip = inet_ntoa(*((struct in_addr *)h->h_addr));
   printf("Aqui está bem\n");
   fflush_unlocked(stdout);
   printf("Ip address %s\n", server_ip);
