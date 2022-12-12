@@ -195,7 +195,6 @@ int ftpConnectDownloadSocket(int port) {
 
 int ftpInit(FtpPath *path){
     memcpy(&ftpPath,path,sizeof(FtpPath));
-    printFtpPath(&ftpPath);
     getIpAddress();
     ftpLogIn();
     ftpEnterPassiveMode();
