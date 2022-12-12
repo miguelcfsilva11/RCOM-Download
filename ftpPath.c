@@ -30,18 +30,25 @@ int parseFTPPathDefault(const char* ftpString, FtpPath* ftpPath, int start) {
   int i = start;
   int j = 0;
   int gotHost = 0;
-  while (!gotHost) {
+  while (!gotHost && ftpString[i] !=0) {
     if (ftpString[i] == '/') {
       gotHost = 1;
-      ftpPath->host[i] = 0;
+      ftpPath->host[j] = 0;
     } else {
       ftpPath->host[j] = ftpString[i];
       j++;
     }
     i++;
   }
-  strcpy(ftpPath->path, ftpString + i);
-  return 1;
+  if(!gotHost){
+    printf("There is no File Path shutting down!\n");
+    exit(-1);
+    }
+  else{
+    strcpy(ftpPath->path, ftpString + i);
+  }
+  printf("\n");
+  return gotHost;
 }
 int parseFTPPathAuth(const char* ftpString, FtpPath* ftpPath, int atLocation) {
   int j = 0;
