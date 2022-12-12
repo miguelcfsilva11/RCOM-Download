@@ -1,7 +1,3 @@
-/**      (C)2000-2021 FEUP
- *       tidy up some includes and parameters
- * */
-
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -10,13 +6,13 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <stdarg.h>
 
 #include "ftpClient.h"
 
-#include <stdarg.h>
 
 
-#define DOWNLOAD_BUF_SIZE 1000
+#define DOWNLOAD_BUF_SIZE 5
 
 int main(int argc, char **argv) {
   //----------------------------
@@ -62,7 +58,6 @@ int main(int argc, char **argv) {
     strncpy(filename, ftpPath.path + filenameStart, 50);
     filename[50] = 0;
   } else {
-    printf("Will it break here ??%s\n", argv[2]);
     strncpy(filename, argv[2], 50);
     filename[50] = 0;
   }
@@ -79,7 +74,5 @@ int main(int argc, char **argv) {
     bytes = read(sockFile,downloadBuf,DOWNLOAD_BUF_SIZE);
     fwrite(downloadBuf,bytes, 1, file);
   } while (bytes >0);
-
-  return 0;
   ftpQuit();
 }
