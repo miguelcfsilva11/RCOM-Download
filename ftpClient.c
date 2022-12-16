@@ -29,13 +29,25 @@ int sockFile;
 char buf[BUFSIZE];
 struct sockaddr_in server_addr;
 
-void create_message(char *dest, const char *command, const char *arg) {
+void getIpAddress();
+void ftpCreateMessage(char *dest, const char *command, const char *arg);
+int ftpReadMessage(int socketFd, char *buf, int size);
+void ftpOpenControlSocket();
+void ftpLogIn();
+void ftpEnterPassiveMode();
+int ftpGetNewPortNumber();
+int ftpConnectDownloadSocket(int port);
+
+int ftpInit(FtpPath *path,enum FtpAction action);
+int ftpQuit();
+
+void ftpCreateMessage(char *dest, const char *command, const char *arg) {
   dest[0] = 0;
   strcat(dest, command);
   strcat(dest, arg);
   strcat(dest, "\n");
 }
-int read_message(int socketFd, char *buf, int size) {
+int ftpReadMessage(int socketFd, char *buf, int size) {
   memset(buf, 0, size);
   buf[3] = 0;
   read(socketFd, buf, 3);
@@ -127,28 +139,28 @@ void ftpOpenControlSocket(){
     exit(-1);
   }
 
-  read_message(sockfd, buf, BUFSIZE);
+  ftpReadMessage(sockfd, buf, BUFSIZE);
   if (buf[0] != '2') {
     perror("Request not completed");
     exit(-1);
   }
 }
 void ftpLogIn() {
-  create_message(buf, "user ", ftpPath.user);
+  ftpCreateMessage(buf, "user ", ftpPath.user);
   print_communication("%s%s\n",NICEPRINT, buf);
   write(sockfd, buf, strlen(buf));
-  read_message(sockfd, buf, BUFSIZE);
+  ftpReadMessage(sockfd, buf, BUFSIZE);
 
-  create_message(buf, "pass ", ftpPath.password);
+  ftpCreateMessage(buf, "pass ", ftpPath.password);
   print_communication("%s%s\n",NICEPRINT, buf);
   write(sockfd, buf, strlen(buf));
-  read_message(sockfd, buf, BUFSIZE);
+  ftpReadMessage(sockfd, buf, BUFSIZE);
 }
 
 void ftpEnterPassiveMode() {
   write(sockfd, "pasv\n", strlen("pasv\n"));
   print_communication("%spasv\n\n",NICEPRINT);
-  read_message(sockfd, buf, BUFSIZE);
+  ftpReadMessage(sockfd, buf, BUFSIZE);
   
 }
 
@@ -188,11 +200,11 @@ int ftpConnectDownloadSocket(int port) {
     perror("Error while in connect()");
     exit(-1);
   }
-  create_message(buf, "retr ", ftpPath.path);
+  ftpCreateMessage(buf, "retr ", ftpPath.path);
   print_communication("%s%s\n",NICEPRINT,buf);
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
-  read_message(sockfd, buf, BUFSIZE);
+  ftpReadMessage(sockfd, buf, BUFSIZE);
   return sockFile;
 }
 
@@ -215,7 +227,7 @@ int ftpInit(FtpPath *path,enum FtpAction action){
 int ftpQuit() {
   write(sockfd,"quit\n",strlen("quit\n"));
   print_communication("%s%s",NICEPRINT,"quit\n");
-  read_message(sockfd,buf,BUFSIZE);
+  ftpReadMessage(sockfd,buf,BUFSIZE);
   if (close(sockfd) < 0) {
     perror("Error while in close()");
     exit(-1);
