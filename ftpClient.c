@@ -148,7 +148,9 @@ void getIpAddress() {
     exit(-1);
   }
   char *server_ip = inet_ntoa(*((struct in_addr *)h->h_addr));
-  print_communication("Ip address %s\n", server_ip);
+#ifdef DEBUG
+  printf("Ip address %s\n", server_ip);
+#endif /* !def DEBUG */
   /*server address handling*/
   bzero((char *)&server_addr, sizeof(server_addr));
   server_addr.sin_family = AF_INET;
@@ -215,9 +217,11 @@ int ftpGetNewPortNumber() {
       sndArg += (buf[i] - '0');
     }
   }
-  print_communication("Calculating port using (%d,%d)\n", fstArg, sndArg);
   int port = fstArg * 256 + sndArg;
+#ifdef DEBUG
+  print_communication("Calculating port using (%d,%d)\n", fstArg, sndArg);
   print_communication("Port is : %d\n", port);
+#endif /* DEBUG */
   return port;
 }
 
