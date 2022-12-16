@@ -49,7 +49,6 @@ int main(int argc, char **argv) {
       printf("%s", downloadBuf);
     } while (bytes > 0);
   }
-
   else {
     if (fileNamePtr == NULL) {
       fileNamePtr = ftpPath.fileName;
