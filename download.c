@@ -1,23 +1,19 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <stdarg.h>
 
 #include "ftpClient.h"
 
-
-
 #define DOWNLOAD_BUF_SIZE 8000
+#define DEFAULT_ARG "ftp://ftp.up.pt/debian/"
 
 int main(int argc, char **argv) {
-  //----------------------------
-  //    Getting The ftp URL
-  //----------------------------
   char ftpArgument[ARG_SIZE + 1];
   if (argc < 2) {
     printf("Nothing Specified usage is :\n");
@@ -30,11 +26,7 @@ int main(int argc, char **argv) {
     strncpy(ftpArgument, argv[1], ARG_SIZE);
     ftpArgument[ARG_SIZE] = 0;
   }
-  printf("Hello world! arg is : %s\n", ftpArgument);
 
-  //----------------------------
-  //    Parsing the URL
-  //----------------------------
   FtpPath ftpPath;
   if (parseFTPPath(ftpArgument, &ftpPath)) {
     printFtpPath(&ftpPath);
@@ -42,37 +34,25 @@ int main(int argc, char **argv) {
     printf("Error while parsing FTP path\n !Shuting Down!");
     exit(1);
   }
-  // -----------------------------
-  //   Getting the File Name
-  // -----------------------------
-  char filename[51];
-  if (argc <= 2) {
-    int i = 0;
-    int filenameStart = 0;
-    while (ftpPath.path[i] != 0) {
-      if (ftpPath.path[i] == '/') {
-        filenameStart = i + 1;
-      }
-      i++;
-    }
-    strncpy(filename, ftpPath.path + filenameStart, 50);
-    filename[50] = 0;
-  } else {
-    strncpy(filename, argv[2], 50);
-    filename[50] = 0;
-  }
-
-  printf("Got filename : %s\n", filename);
-
-  int sockFile = ftpInit(&ftpPath,FtpDownload);
-
-  FILE *file = fopen(filename, "wb");
-
   int bytes = -1;
   char downloadBuf[DOWNLOAD_BUF_SIZE];
-  do {
-    bytes = read(sockFile,downloadBuf,DOWNLOAD_BUF_SIZE);
-    fwrite(downloadBuf,bytes, 1, file);
-  } while (bytes >0);
+  int sockFile = ftpInit(&ftpPath);
+
+  if (ftpPath.isDir) {
+    do {
+      bytes = read(sockFile, downloadBuf, DOWNLOAD_BUF_SIZE);
+      printf("%s", downloadBuf);
+    } while (bytes > 0);
+  }
+
+  else {
+    printf("Got filename : %s\n", ftpPath.fileName);
+    FILE *file = fopen(ftpPath.fileName, "wb");
+    do {
+      bytes = read(sockFile, downloadBuf, DOWNLOAD_BUF_SIZE);
+      fwrite(downloadBuf, bytes, 1, file);
+    } while (bytes > 0);
+  }
+
   ftpQuit();
 }

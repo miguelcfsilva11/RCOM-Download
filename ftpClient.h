@@ -2,17 +2,17 @@
 #define __FTPCLIENT__
 
 #include "ftpPath.h"
+
 /*
- * Given a ftpPath and an options object
+ * Given a ftpPath
  * Initializes the ftpConnection in passive mode and returns the file
  * descriptor of the socket to read from.
+ *
+ * If the Path is a directory an ls will be performed
+ * If not the file will be downloaded
 */
 
-enum FtpAction {
-    FtpDownload,
-    FtpList,
-};
-int ftpInit(FtpPath *ftpPath,enum FtpAction action);
+int ftpInit(FtpPath *ftpPath);
 
 /*
  * Ends the Connection 
