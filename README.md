@@ -1,6 +1,20 @@
 # RCOM-Download
 This repository holds the code for RCOM's second project.
 
+# Usage
+
+- `$ make` vai criar o executável `download`
+
+- Listar o diretório de um servidor ftp.
+```bash
+./download ftp://[user:password@]host/url/para/diretorio 
+```
+![exemplo-list]()
+- Fazer download de um ficheiro num servidor ftp.
+```bash
+./download ftp://[user:password@]host/url/para/ficherio [novo-nome-para-o-ficheiro]
+```
+![exemplo-download]()
 
 # Interface de ftpClient
 
