@@ -29,6 +29,7 @@ int sockFile;
 char buf[BUFSIZE];
 struct sockaddr_in server_addr;
 
+// Forward Declaration Just For better Documentation
 void getIpAddress();
 void ftpCreateMessage(char *dest, const char *command, const char *arg);
 int ftpReadMessage(int socketFd, char *buf, int size);
@@ -37,9 +38,44 @@ void ftpLogIn();
 void ftpEnterPassiveMode();
 int ftpGetNewPortNumber();
 int ftpConnectDownloadSocket(int port);
+void ftpSendRetr();
+void ftpSendList();
 
 int ftpInit(FtpPath *path,enum FtpAction action);
 int ftpQuit();
+
+int ftpInit(FtpPath *path,enum FtpAction action){
+    memcpy(&ftpPath,path,sizeof(FtpPath));
+    getIpAddress();
+    ftpOpenControlSocket();
+    ftpLogIn();
+    ftpEnterPassiveMode();
+    int port = ftpGetNewPortNumber();
+    ftpConnectDownloadSocket(port);
+    if(action == FtpDownload){
+    ftpSendRetr();
+    }
+    else if (action == FtpList){
+        print_communication("Implementing Listing Action\n");
+        ftpSendList();
+    }
+    return sockFile;
+}
+
+int ftpQuit() {
+  write(sockfd,"quit\n",strlen("quit\n"));
+  print_communication("%s%s",NICEPRINT,"quit\n");
+  ftpReadMessage(sockfd,buf,BUFSIZE);
+  if (close(sockfd) < 0) {
+    perror("Error while in close()");
+    exit(-1);
+  }
+  if (close(sockFile) < 0) {
+    perror("Error while in close()");
+    exit(-1);
+  }
+  return 1;
+}
 
 void ftpCreateMessage(char *dest, const char *command, const char *arg) {
   dest[0] = 0;
@@ -122,7 +158,6 @@ void getIpAddress() {
       inet_addr(server_ip); /*32 bit Internet address network byte ordered*/
   server_addr.sin_port =
       htons(SERVER_PORT); /*server TCP port must be network byte ordered */
-
 }
 
 void ftpOpenControlSocket(){
@@ -145,6 +180,7 @@ void ftpOpenControlSocket(){
     exit(-1);
   }
 }
+
 void ftpLogIn() {
   ftpCreateMessage(buf, "user ", ftpPath.user);
   print_communication("%s%s\n",NICEPRINT, buf);
@@ -200,41 +236,20 @@ int ftpConnectDownloadSocket(int port) {
     perror("Error while in connect()");
     exit(-1);
   }
+  return sockFile;
+}
+
+void ftpSendRetr(){
   ftpCreateMessage(buf, "retr ", ftpPath.path);
   print_communication("%s%s\n",NICEPRINT,buf);
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
   ftpReadMessage(sockfd, buf, BUFSIZE);
-  return sockFile;
 }
-
-int ftpInit(FtpPath *path,enum FtpAction action){
-    memcpy(&ftpPath,path,sizeof(FtpPath));
-    getIpAddress();
-    ftpOpenControlSocket();
-    ftpLogIn();
-    ftpEnterPassiveMode();
-    int port = ftpGetNewPortNumber();
-    if(action == FtpDownload){
-    ftpConnectDownloadSocket(port);
-    }
-    else if (action == FtpList){
-        print_communication("Implementing Listing Action\n");
-    }
-    return sockFile;
-}
-
-int ftpQuit() {
-  write(sockfd,"quit\n",strlen("quit\n"));
-  print_communication("%s%s",NICEPRINT,"quit\n");
-  ftpReadMessage(sockfd,buf,BUFSIZE);
-  if (close(sockfd) < 0) {
-    perror("Error while in close()");
-    exit(-1);
-  }
-  if (close(sockFile) < 0) {
-    perror("Error while in close()");
-    exit(-1);
-  }
-  return 1;
+void ftpSendList(){
+  ftpCreateMessage(buf, "list ", ftpPath.path);
+  print_communication("%s%s\n",NICEPRINT,buf);
+  write(sockfd, buf, strlen(buf));
+  // Recieving Status Response
+  ftpReadMessage(sockfd, buf, BUFSIZE);
 }
