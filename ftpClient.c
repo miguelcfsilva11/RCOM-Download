@@ -7,24 +7,29 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <stdarg.h>
+
 #include "ftpClient.h"
 
 #define BUFSIZE 1000
 #define SERVER_PORT 21
 #define NICEPRINT "------> "
 
+#ifdef PRINT_COMMUNICATION 
+#define print_communication(...) printf(__VA_ARGS__ ) 
+#else
+#define print_communication(...)
+#endif
+
+// Globals
 FtpPath ftpPath;
 int READING_MULTILINE = 0;
 char MULTILINE_CODE[3];
 int sockfd;
 int sockFile;
-struct sockaddr_in server_addr;
 char buf[BUFSIZE];
-struct hostent *h;
-char *server_ip;
+struct sockaddr_in server_addr;
 
 void create_message(char *dest, const char *command, const char *arg) {
-  // memset(dest,0,BUFSIZE);
   dest[0] = 0;
   strcat(dest, command);
   strcat(dest, arg);
@@ -38,7 +43,7 @@ int read_message(int socketFd, char *buf, int size) {
     READING_MULTILINE = 0;
   }
   read(socketFd, buf + 3, 1);
-  printf("%s", buf);
+  print_communication("%s", buf);
   if (buf[3] == '-') {
     READING_MULTILINE = 1;
   }
@@ -50,7 +55,7 @@ int read_message(int socketFd, char *buf, int size) {
   int code_i = 0;
   for (; i < size && !ended; i++) {
     read(socketFd, buf + i, 1);
-    printf("%c", buf[i]);
+    print_communication("%c", buf[i]);
     if (buf[i] == '\r') {
       gotCariage = 1;
     }
@@ -91,13 +96,13 @@ int read_message(int socketFd, char *buf, int size) {
 }
 
 void getIpAddress() {
-  h = gethostbyname(ftpPath.host);
+  struct hostent *h = gethostbyname(ftpPath.host);
   if( NULL == h){
      printf("Error getting the ip: %s\n",hstrerror(h_errno));
      exit(-1);
     }
-  server_ip = inet_ntoa(*((struct in_addr *)h->h_addr));
-  printf("Ip address %s\n", server_ip);
+  char* server_ip = inet_ntoa(*((struct in_addr *)h->h_addr));
+  print_communication("Ip address %s\n", server_ip);
   /*server address handling*/
   bzero((char *)&server_addr, sizeof(server_addr));
   server_addr.sin_family = AF_INET;
@@ -106,6 +111,9 @@ void getIpAddress() {
   server_addr.sin_port =
       htons(SERVER_PORT); /*server TCP port must be network byte ordered */
 
+}
+
+void ftpOpenControlSocket(){
   /*open a TCP socket*/
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     perror("Error while in socket()");
@@ -125,22 +133,21 @@ void getIpAddress() {
     exit(-1);
   }
 }
-
 void ftpLogIn() {
   create_message(buf, "user ", ftpPath.user);
-  printf("%s%s\n",NICEPRINT, buf);
+  print_communication("%s%s\n",NICEPRINT, buf);
   write(sockfd, buf, strlen(buf));
   read_message(sockfd, buf, BUFSIZE);
 
   create_message(buf, "pass ", ftpPath.password);
-  printf("%s%s\n",NICEPRINT, buf);
+  print_communication("%s%s\n",NICEPRINT, buf);
   write(sockfd, buf, strlen(buf));
   read_message(sockfd, buf, BUFSIZE);
 }
 
 void ftpEnterPassiveMode() {
   write(sockfd, "pasv\n", strlen("pasv\n"));
-  printf("%spasv\n\n",NICEPRINT);
+  print_communication("%spasv\n\n",NICEPRINT);
   read_message(sockfd, buf, BUFSIZE);
   
 }
@@ -163,9 +170,9 @@ int ftpGetNewPortNumber() {
       sndArg += (buf[i] - '0');
     }
   }
-  printf("Calculating port using (%d,%d)\n", fstArg, sndArg);
+  print_communication("Calculating port using (%d,%d)\n", fstArg, sndArg);
   int port = fstArg * 256 + sndArg;
-  printf("Port is : %d\n", port);
+  print_communication("Port is : %d\n", port);
   return port;
 }
 
@@ -182,24 +189,33 @@ int ftpConnectDownloadSocket(int port) {
     exit(-1);
   }
   create_message(buf, "retr ", ftpPath.path);
-  printf("%s%s\n",NICEPRINT,buf);
+  print_communication("%s%s\n",NICEPRINT,buf);
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
   read_message(sockfd, buf, BUFSIZE);
   return sockFile;
 }
 
-int ftpInit(FtpPath *path){
+int ftpInit(FtpPath *path,enum FtpAction action){
     memcpy(&ftpPath,path,sizeof(FtpPath));
     getIpAddress();
+    ftpOpenControlSocket();
     ftpLogIn();
     ftpEnterPassiveMode();
     int port = ftpGetNewPortNumber();
+    if(action == FtpDownload){
     ftpConnectDownloadSocket(port);
+    }
+    else if (action == FtpList){
+        print_communication("Implementing Listing Action\n");
+    }
     return sockFile;
 }
 
 int ftpQuit() {
+  write(sockfd,"quit\n",strlen("quit\n"));
+  print_communication("%s%s",NICEPRINT,"quit\n");
+  read_message(sockfd,buf,BUFSIZE);
   if (close(sockfd) < 0) {
     perror("Error while in close()");
     exit(-1);

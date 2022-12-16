@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
 
   printf("Got filename : %s\n", filename);
 
-  int sockFile = ftpInit(&ftpPath);
+  int sockFile = ftpInit(&ftpPath,FtpDownload);
 
   FILE *file = fopen(filename, "wb");
 
