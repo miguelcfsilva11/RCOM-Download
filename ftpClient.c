@@ -1,12 +1,12 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <stdarg.h>
 
 #include "ftpClient.h"
 
@@ -14,8 +14,8 @@
 #define SERVER_PORT 21
 #define NICEPRINT "------> "
 
-#ifdef PRINT_COMMUNICATION 
-#define print_communication(...) printf(__VA_ARGS__ ) 
+#ifdef PRINT_COMMUNICATION
+#define print_communication(...) printf(__VA_ARGS__)
 #else
 #define print_communication(...)
 #endif
@@ -41,31 +41,29 @@ int ftpConnectDownloadSocket(int port);
 void ftpSendRetr();
 void ftpSendList();
 
-int ftpInit(FtpPath *path,enum FtpAction action);
+int ftpInit(FtpPath *path);
 int ftpQuit();
 
-int ftpInit(FtpPath *path,enum FtpAction action){
-    memcpy(&ftpPath,path,sizeof(FtpPath));
-    getIpAddress();
-    ftpOpenControlSocket();
-    ftpLogIn();
-    ftpEnterPassiveMode();
-    int port = ftpGetNewPortNumber();
-    ftpConnectDownloadSocket(port);
-    if(action == FtpDownload){
+int ftpInit(FtpPath *path) {
+  memcpy(&ftpPath, path, sizeof(FtpPath));
+  getIpAddress();
+  ftpOpenControlSocket();
+  ftpLogIn();
+  ftpEnterPassiveMode();
+  int port = ftpGetNewPortNumber();
+  ftpConnectDownloadSocket(port);
+  if (ftpPath.isDir) {
+    ftpSendList();
+  } else {
     ftpSendRetr();
-    }
-    else if (action == FtpList){
-        print_communication("Implementing Listing Action\n");
-        ftpSendList();
-    }
-    return sockFile;
+  }
+  return sockFile;
 }
 
 int ftpQuit() {
-  write(sockfd,"quit\n",strlen("quit\n"));
-  print_communication("%s%s",NICEPRINT,"quit\n");
-  ftpReadMessage(sockfd,buf,BUFSIZE);
+  write(sockfd, "quit\n", strlen("quit\n"));
+  print_communication("%s%s", NICEPRINT, "quit\n");
+  ftpReadMessage(sockfd, buf, BUFSIZE);
   if (close(sockfd) < 0) {
     perror("Error while in close()");
     exit(-1);
@@ -145,11 +143,11 @@ int ftpReadMessage(int socketFd, char *buf, int size) {
 
 void getIpAddress() {
   struct hostent *h = gethostbyname(ftpPath.host);
-  if( NULL == h){
-     printf("Error getting the ip: %s\n",hstrerror(h_errno));
-     exit(-1);
-    }
-  char* server_ip = inet_ntoa(*((struct in_addr *)h->h_addr));
+  if (NULL == h) {
+    printf("Error getting the ip: %s\n", hstrerror(h_errno));
+    exit(-1);
+  }
+  char *server_ip = inet_ntoa(*((struct in_addr *)h->h_addr));
   print_communication("Ip address %s\n", server_ip);
   /*server address handling*/
   bzero((char *)&server_addr, sizeof(server_addr));
@@ -160,7 +158,7 @@ void getIpAddress() {
       htons(SERVER_PORT); /*server TCP port must be network byte ordered */
 }
 
-void ftpOpenControlSocket(){
+void ftpOpenControlSocket() {
   /*open a TCP socket*/
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     perror("Error while in socket()");
@@ -183,21 +181,20 @@ void ftpOpenControlSocket(){
 
 void ftpLogIn() {
   ftpCreateMessage(buf, "user ", ftpPath.user);
-  print_communication("%s%s\n",NICEPRINT, buf);
+  print_communication("%s%s\n", NICEPRINT, buf);
   write(sockfd, buf, strlen(buf));
   ftpReadMessage(sockfd, buf, BUFSIZE);
 
   ftpCreateMessage(buf, "pass ", ftpPath.password);
-  print_communication("%s%s\n",NICEPRINT, buf);
+  print_communication("%s%s\n", NICEPRINT, buf);
   write(sockfd, buf, strlen(buf));
   ftpReadMessage(sockfd, buf, BUFSIZE);
 }
 
 void ftpEnterPassiveMode() {
   write(sockfd, "pasv\n", strlen("pasv\n"));
-  print_communication("%spasv\n\n",NICEPRINT);
+  print_communication("%spasv\n\n", NICEPRINT);
   ftpReadMessage(sockfd, buf, BUFSIZE);
-  
 }
 
 int ftpGetNewPortNumber() {
@@ -239,16 +236,16 @@ int ftpConnectDownloadSocket(int port) {
   return sockFile;
 }
 
-void ftpSendRetr(){
+void ftpSendRetr() {
   ftpCreateMessage(buf, "retr ", ftpPath.path);
-  print_communication("%s%s\n",NICEPRINT,buf);
+  print_communication("%s%s\n", NICEPRINT, buf);
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
   ftpReadMessage(sockfd, buf, BUFSIZE);
 }
-void ftpSendList(){
+void ftpSendList() {
   ftpCreateMessage(buf, "list ", ftpPath.path);
-  print_communication("%s%s\n",NICEPRINT,buf);
+  print_communication("%s%s\n", NICEPRINT, buf);
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
   ftpReadMessage(sockfd, buf, BUFSIZE);
