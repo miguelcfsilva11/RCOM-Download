@@ -9,12 +9,12 @@ This repository holds the code for RCOM's second project.
 ```bash
 ./download ftp://[user:password@]host/url/para/diretorio 
 ```
-![exemplo-list]()
+![exemplo-list](imgs/listing-usage.png)
 - Fazer download de um ficheiro num servidor ftp.
 ```bash
 ./download ftp://[user:password@]host/url/para/ficherio [novo-nome-para-o-ficheiro]
 ```
-![exemplo-download]()
+![exemplo-download](imgs/download-usage.png)
 
 # Interface de ftpClient
 
@@ -66,7 +66,7 @@ contem a maior parte da complexidade do trabalho.
 
 Como providenciamos esta interface tão simples o seu uso acaba por ser bastante legível e idiomático:
 
-![](download.png)
+![](imgs/download-code.png)
 
 Nestas 30 linhas de código:
 - Damos parse à string que contem o URL 
