@@ -5,42 +5,93 @@ This repository holds the code for RCOM's second project.
 
 - `$ make` vai criar o executável `download`
 
-- Listar o diretório de um servidor ftp.
+- **Listar** o diretório de um servidor ftp.
 ```bash
 ./download ftp://[user:password@]host/url/para/diretorio 
 ```
-![exemplo-list](imgs/listing-usage.png)
-- Fazer download de um ficheiro num servidor ftp.
+![exemplo-list](./imgs/usage-listing.png)
+- Fazer **download** de um ficheiro num servidor ftp.
 ```bash
 ./download ftp://[user:password@]host/url/para/ficherio [novo-nome-para-o-ficheiro]
 ```
-![exemplo-download](imgs/download-usage.png)
+![exemplo-download](imgs/usage-download.png)
 
-# Interface de ftpClient
+# Error Handeling
+
+Como vamos ver nos exemplos, se um erro acontece e a ligação ao servidor está estabelecida,o programa é sempre capaz de desligar a conexão.
+
+- Incorrect URL
+![filePathErrorHandeling.png](./imgs/filePathErrorHandeling.png)
+- Could not Resolve IP address
+![ipErrorHandeling.png](./imgs/ipErrorHandeling.png)
+- Failed To Open Directory
+![badDirectory.png](./imgs/badDirectory.png)
+- Failed To Open File
+![badFile.png](./imgs/badFile.png)
+- Wrong Login 
+![wrongPassword.png](./imgs/wrongPassword.png)
+
+# Estrutura Do Projeto
+
+```
+.
+├── ftpPath.c
+├── ftpPath.h
+│
+├── ftpReply.c
+├── ftpReply.h
+│
+├── ftpClient.c
+├── ftpClient.h
+│
+└── download.c
+```
+
+- `ftpPath.h`: api que dá parse a uma string contendo um URL de um servidor FTP
+- `ftpReply.h`: api que permite criar mensagens e receber de respostas de várias linhas do servidor.
+- `ftpClient.h`: api que cria uma cliente FTP e implementa as funcoes **download**, e **listing**.
+- `download.c`: aplicacao de download que usa o cliente implementado.
+
+## Interface de ftpPath
 
 `ftpPath.h` define a api para dar parse a um URL de um servidor ftp:
 
 ```c
-#define ARG_SIZE 550
-#define PROTOCOL_SIZE 6
-#define PROTOCOL "ftp://"
-
-typedef struct {
-  char protocol[50];
-  char host[200];
-  char path[200];
-  char password[50];
-  char user[50];
-  char fileName[100];
-  char isDir;
-  char auth;
-} FtpPath;
+typedef struct ftp_path FtpPath;
 
 void printFtpPath(FtpPath* ftpPath);
 int parseFTPPath(const char* ftpString, FtpPath* ftpPath);
 ```
-A nossa aplicacao de download `download.c` inclui o nosso cliente de ftp que
-expoem esta seguinte interface:
+
+## Interface de ftpReply
+```c
+#define NICEPRINT "------> "
+
+#ifdef PRINT_COMMUNICATION
+#define print_communication(...) printf(__VA_ARGS__)
+#define print_reply(...) printf("%s", NICEPRINT);printf(__VA_ARGS__)
+#else
+#define print_communication(...)
+#define print_reply(...)
+#endif
+
+extern char ftp_ReplyCode[4];
+
+void ftpSafeReadMessage(int sockfd,char* buf,int size);
+void ftpCreateMessage(char *dest, const char *command, const char *arg);
+```
+- No passo de compilação podemos não definir `PRINT_COMMUNICATION` e iremos
+  assim desativar a impressão da comunicação entre o cliente e o servidor (para
+  o caso de aplicações que queiram fazer algo mais complexo com este cliente)
+- `print_reply` é uma macro usada para imprimir as respostas do cliente
+- `ftp_ReplyCode` é uma variável declarada como `extern` para imitar o estilo
+  de códigos que usa a `libc` com coisas como `errno` e `h_errno`, pode ser
+  acedida depois da chamada a `ftpSafeReadMessage`.
+- `ftpSafeReadMessage` lê sempre toda a mensagem que o servidor mandou
+  independentemente do tamanho do buffer dado ou a mensagem ser **multiline**.
+- `ftpCreateMessage` cria uma  mensagem FTP em `dest` com o comandando e o argumento dado.
+
+## Interface de ftpClient
 
 ```c
 #include "ftpPath.h"
@@ -62,9 +113,6 @@ Isto é tudo que um usuário do nosso cliente de ftp,
 precisa de saber pois o resto é abstraido e está contido em ficheiros de implementacao (`.c`) que
 contem a maior parte da complexidade do trabalho.
 
-
-## Recieving Multiline Messages
-
 # Download 
 
 Como providenciamos esta interface tão simples o seu uso acaba por ser bastante legível e idiomático:
@@ -78,6 +126,8 @@ Nestas 30 linhas de código:
 - Se estivermos a trabalhar com um ficheiro criamos um ficheiro com o nome
   especificado no URL ou com outro nome que o user passe como argumento.
 
-## ftpPath
 
-## ftpClient
+
+# Notas
+
+- Foram omitidos alguns detalhes de implementação nesta overview do código.
