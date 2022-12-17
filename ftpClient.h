@@ -2,6 +2,7 @@
 #define __FTPCLIENT__
 
 #include "ftpPath.h"
+#include "ftpReply.h"
 
 /*
  * Given a ftpPath
