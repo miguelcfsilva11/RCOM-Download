@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "ftpClient.h"
+#include "ftpReply.h"
 
 #define BUFSIZE 800
 #define SERVER_PORT 21
@@ -26,7 +27,7 @@ void getIpAddress();
 void ftpCreateMessage(char *dest, const char *command, const char *arg);
 int ftpReadMessage(int socketFd, char *buf, int size);
 void ftpOpenControlSocket();
-void ftpLogIn();
+int ftpLogIn();
 void ftpEnterPassiveMode();
 int ftpGetNewPortNumber();
 int ftpConnectDownloadSocket(int port);
@@ -40,7 +41,9 @@ int ftpInit(FtpPath *path) {
   memcpy(&ftpPath, path, sizeof(FtpPath));
   getIpAddress();
   ftpOpenControlSocket();
-  ftpLogIn();
+  if(!ftpLogIn()){
+     return -1;
+    }
   ftpEnterPassiveMode();
   int port = ftpGetNewPortNumber();
   ftpConnectDownloadSocket(port);
@@ -92,7 +95,6 @@ void ftpOpenControlSocket() {
     perror("Error while in socket()");
     exit(-1);
   }
-
   /*connect to the server*/
   if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) <
       0) {
@@ -101,24 +103,25 @@ void ftpOpenControlSocket() {
   }
 
   ftpSafeReadMessage(sockfd,buf,BUFSIZE);
-
-  // Tenho que checar aqui outra coisa!
-  if (buf[0] != '2') {
+  if (ftp_ReplyCode[0] != '2') {
     perror("Request not completed");
     exit(-1);
   }
 }
 
-void ftpLogIn() {
+int ftpLogIn() {
   ftpCreateMessage(buf, "user ", ftpPath.user);
   print_reply("%s\n", buf);
   write(sockfd, buf, strlen(buf));
   ftpSafeReadMessage(sockfd, buf, BUFSIZE);
+  printf("Reply code %s\n",ftp_ReplyCode);
 
   ftpCreateMessage(buf, "pass ", ftpPath.password);
   print_reply("%s\n", buf);
   write(sockfd, buf, strlen(buf));
   ftpSafeReadMessage(sockfd, buf, BUFSIZE);
+  printf("Reply code %s\n",ftp_ReplyCode);
+  return ftp_ReplyCode[0] <= '2';
 }
 
 void ftpEnterPassiveMode() {
@@ -126,6 +129,7 @@ void ftpEnterPassiveMode() {
   print_communication("%spasv\n\n", NICEPRINT);
   print_reply("pasv\n\n");
   ftpSafeReadMessage(sockfd, buf, BUFSIZE);
+  printf("Reply code %s\n",ftp_ReplyCode);
 }
 
 int ftpGetNewPortNumber() {
@@ -175,7 +179,9 @@ void ftpSendRetr() {
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
   ftpSafeReadMessage(sockfd, buf, BUFSIZE);
-  if (buf[0] > '2') {
+  printf("Reply code %s\n",ftp_ReplyCode);
+  
+  if (ftp_ReplyCode[0] > '2') {
     sockFile = -1;
   } else {
     connectedSlave = 1;
@@ -187,4 +193,5 @@ void ftpSendList() {
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
   ftpSafeReadMessage(sockfd, buf, BUFSIZE);
+  printf("Reply code %s\n",ftp_ReplyCode);
 }

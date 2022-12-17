@@ -14,7 +14,8 @@ int READING_MULTILINE = 0;
 int READING_SINGLE_LINE = 0;
 int WAITING_CR = 0;
 int WAITING_NL = 0;
-char MULTILINE_CODE[3];
+
+char ftp_ReplyCode[4];
 
 void ftpCreateMessage(char *dest, const char *command, const char *arg) {
   dest[0] = 0;
@@ -47,7 +48,7 @@ int ftpReadMultipleLines(int socketFd, char *buf, int size) {
   newCode[3] = 0;
   read(socketFd, buf + 3, 1);
   if (buf[3] != '-') {
-    if (strcmp(newCode, MULTILINE_CODE) == 0) {
+    if (strcmp(newCode, ftp_ReplyCode) == 0) {
       READING_MULTILINE = 0;
     }
   }
@@ -78,7 +79,7 @@ int ftpReadMultipleLines(int socketFd, char *buf, int size) {
           continue;
         }
         code[3] = 0;
-        if (strcmp(code, MULTILINE_CODE) == 0) {
+        if (strcmp(code, ftp_ReplyCode) == 0) {
           READING_MULTILINE = 0;
           WAITING_CR = 1;
         }
@@ -106,9 +107,9 @@ int ftpReadMessage(int socketFd, char *buf, int size) {
     }
   } else if (!READING_MULTILINE && !READING_SINGLE_LINE) {
     read(socketFd, buf, 4);
+    strncpy(ftp_ReplyCode, buf, 3);
     if (buf[3] == '-') {
       READING_MULTILINE = 1;
-      strncpy(MULTILINE_CODE, buf, 3);
       bytesRead = ftpReadMultipleLines(socketFd, buf + 4, size - 3);
     } else {
       READING_SINGLE_LINE = 1;

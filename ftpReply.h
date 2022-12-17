@@ -13,6 +13,8 @@
 #define print_reply(...)
 #endif
 
+extern char ftp_ReplyCode[4];
+
 void ftpSafeReadMessage(int sockfd,char* buf,int size);
 void ftpCreateMessage(char *dest, const char *command, const char *arg);
 
