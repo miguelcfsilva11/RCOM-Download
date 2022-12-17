@@ -1,6 +1,3 @@
-# RCOM-Download
-This repository holds the code for RCOM's second project.
-
 # Usage
 
 - `$ make` vai criar o executável `download`
