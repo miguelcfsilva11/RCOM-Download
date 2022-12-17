@@ -16,8 +16,11 @@
 
 #ifdef PRINT_COMMUNICATION
 #define print_communication(...) printf(__VA_ARGS__)
+#define print_reply(...) printf("%s",NICEPRINT);printf(__VA_ARGS__)
+
 #else
 #define print_communication(...)
+#define print_reply(...)
 #endif
 
 // Globals
@@ -63,7 +66,7 @@ int ftpInit(FtpPath *path) {
 
 int ftpQuit() {
   write(sockfd, "quit\n", strlen("quit\n"));
-  print_communication("%s%s", NICEPRINT, "quit\n");
+  print_reply("quit\n");
   ftpReadMessage(sockfd, buf, BUFSIZE);
   if (close(sockfd) < 0) {
     perror("Error while in close()");
@@ -184,12 +187,12 @@ void ftpOpenControlSocket() {
 
 void ftpLogIn() {
   ftpCreateMessage(buf, "user ", ftpPath.user);
-  print_communication("%s%s\n", NICEPRINT, buf);
+  print_reply("%s\n",buf);
   write(sockfd, buf, strlen(buf));
   ftpReadMessage(sockfd, buf, BUFSIZE);
 
   ftpCreateMessage(buf, "pass ", ftpPath.password);
-  print_communication("%s%s\n", NICEPRINT, buf);
+  print_reply("%s\n",buf);
   write(sockfd, buf, strlen(buf));
   ftpReadMessage(sockfd, buf, BUFSIZE);
 }
@@ -197,6 +200,7 @@ void ftpLogIn() {
 void ftpEnterPassiveMode() {
   write(sockfd, "pasv\n", strlen("pasv\n"));
   print_communication("%spasv\n\n", NICEPRINT);
+  print_reply("pasv\n\n");
   ftpReadMessage(sockfd, buf, BUFSIZE);
 }
 
@@ -243,7 +247,7 @@ int ftpConnectDownloadSocket(int port) {
 
 void ftpSendRetr() {
   ftpCreateMessage(buf, "retr ", ftpPath.path);
-  print_communication("%s%s\n", NICEPRINT, buf);
+  print_reply("%s\n",buf);
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
   ftpReadMessage(sockfd, buf, BUFSIZE);
@@ -256,7 +260,7 @@ void ftpSendRetr() {
 }
 void ftpSendList() {
   ftpCreateMessage(buf, "list ", ftpPath.path);
-  print_communication("%s%s\n", NICEPRINT, buf);
+  print_reply("%s\n",buf);
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
   ftpReadMessage(sockfd, buf, BUFSIZE);
