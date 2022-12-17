@@ -41,9 +41,9 @@ int ftpInit(FtpPath *path) {
   memcpy(&ftpPath, path, sizeof(FtpPath));
   getIpAddress();
   ftpOpenControlSocket();
-  if(!ftpLogIn()){
-     return -1;
-    }
+  if (!ftpLogIn()) {
+    return -1;
+  }
   ftpEnterPassiveMode();
   int port = ftpGetNewPortNumber();
   ftpConnectDownloadSocket(port);
@@ -56,6 +56,9 @@ int ftpInit(FtpPath *path) {
 }
 
 int ftpQuit() {
+  if (connectedSlave) {
+    ftpSafeReadMessage(sockfd, buf, BUFSIZE);
+  }
   write(sockfd, "quit\n", strlen("quit\n"));
   print_reply("quit\n");
   ftpSafeReadMessage(sockfd, buf, BUFSIZE);
@@ -102,7 +105,7 @@ void ftpOpenControlSocket() {
     exit(-1);
   }
 
-  ftpSafeReadMessage(sockfd,buf,BUFSIZE);
+  ftpSafeReadMessage(sockfd, buf, BUFSIZE);
   if (ftp_ReplyCode[0] != '2') {
     perror("Request not completed");
     exit(-1);
@@ -176,7 +179,7 @@ void ftpSendRetr() {
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
   ftpSafeReadMessage(sockfd, buf, BUFSIZE);
-  
+
   if (ftp_ReplyCode[0] > '2') {
     sockFile = -1;
   } else {
@@ -189,4 +192,9 @@ void ftpSendList() {
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
   ftpSafeReadMessage(sockfd, buf, BUFSIZE);
+  if (ftp_ReplyCode[0] > '2') {
+    sockFile = -1;
+  } else {
+    connectedSlave = 1;
+  }
 }

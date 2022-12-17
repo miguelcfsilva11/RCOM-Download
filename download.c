@@ -1,10 +1,9 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "ftpClient.h"
-
 
 #define DOWNLOAD_BUF_SIZE 8000
 #define DEFAULT_ARG "ftp://ftp.up.pt/debian/"
@@ -37,32 +36,27 @@ int main(int argc, char **argv) {
     printf("Error while parsing FTP path\n !Shuting Down!");
     exit(1);
   }
-  #ifdef DEBUG
-    printFtpPath(&ftpPath);
-  #endif /* DEBUG */
 
   int sockFile = ftpInit(&ftpPath);
-  if(sockFile == -1){
+  if (sockFile == -1) {
     ftpQuit();
     exit(1);
-    }
+  }
   if (ftpPath.isDir) {
     do {
       bytes = read(sockFile, downloadBuf, DOWNLOAD_BUF_SIZE);
       printf("%s", downloadBuf);
     } while (bytes > 0);
-  }
+  } 
   else {
     if (fileNamePtr == NULL) {
       fileNamePtr = ftpPath.fileName;
     }
-
     FILE *file = fopen(fileNamePtr, "wb");
     do {
       bytes = read(sockFile, downloadBuf, DOWNLOAD_BUF_SIZE);
       fwrite(downloadBuf, bytes, 1, file);
     } while (bytes > 0);
   }
-
   ftpQuit();
 }
