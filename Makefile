@@ -5,9 +5,9 @@ OUT=download
 all: normal
 
 normal:
-	$(CC)  $(FLAGS) -D PRINT_COMMUNICATION ftpPath.c ftpClient.c download.c -o $(OUT)
+	$(CC)  $(FLAGS) -D PRINT_COMMUNICATION ftpPath.c ftpReply.c ftpClient.c download.c -o $(OUT)
 
 debug:
-	$(CC)  $(FLAGS) -D DEBUG -D PRINT_COMMUNICATION ftpPath.c ftpClient.c download.c -o $(OUT)
+	$(CC)  $(FLAGS) -D DEBUG -D PRINT_COMMUNICATION ftpPath.c ftpReply.c ftpClient.c download.c -o $(OUT)
 
 
