@@ -42,7 +42,10 @@ int main(int argc, char **argv) {
   #endif /* DEBUG */
 
   int sockFile = ftpInit(&ftpPath);
-
+  if(sockFile == -1){
+    ftpQuit();
+    exit(1);
+    }
   if (ftpPath.isDir) {
     do {
       bytes = read(sockFile, downloadBuf, DOWNLOAD_BUF_SIZE);

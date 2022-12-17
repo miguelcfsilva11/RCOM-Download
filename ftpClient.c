@@ -26,6 +26,7 @@ int READING_MULTILINE = 0;
 char MULTILINE_CODE[3];
 int sockfd;
 int sockFile;
+char connectedSlave=0;
 char buf[BUFSIZE];
 struct sockaddr_in server_addr;
 
@@ -68,7 +69,7 @@ int ftpQuit() {
     perror("Error while in close()");
     exit(-1);
   }
-  if (close(sockFile) < 0) {
+  if (connectedSlave && close(sockFile) < 0) {
     perror("Error while in close()");
     exit(-1);
   }
@@ -246,6 +247,12 @@ void ftpSendRetr() {
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
   ftpReadMessage(sockfd, buf, BUFSIZE);
+  if (buf[0] > '2') {
+    sockFile = -1;
+  }
+  else{
+    connectedSlave = 1;
+    }
 }
 void ftpSendList() {
   ftpCreateMessage(buf, "list ", ftpPath.path);
