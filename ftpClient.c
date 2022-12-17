@@ -114,13 +114,11 @@ int ftpLogIn() {
   print_reply("%s\n", buf);
   write(sockfd, buf, strlen(buf));
   ftpSafeReadMessage(sockfd, buf, BUFSIZE);
-  printf("Reply code %s\n",ftp_ReplyCode);
 
   ftpCreateMessage(buf, "pass ", ftpPath.password);
   print_reply("%s\n", buf);
   write(sockfd, buf, strlen(buf));
   ftpSafeReadMessage(sockfd, buf, BUFSIZE);
-  printf("Reply code %s\n",ftp_ReplyCode);
   return ftp_ReplyCode[0] <= '2';
 }
 
@@ -129,7 +127,6 @@ void ftpEnterPassiveMode() {
   print_communication("%spasv\n\n", NICEPRINT);
   print_reply("pasv\n\n");
   ftpSafeReadMessage(sockfd, buf, BUFSIZE);
-  printf("Reply code %s\n",ftp_ReplyCode);
 }
 
 int ftpGetNewPortNumber() {
@@ -179,7 +176,6 @@ void ftpSendRetr() {
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
   ftpSafeReadMessage(sockfd, buf, BUFSIZE);
-  printf("Reply code %s\n",ftp_ReplyCode);
   
   if (ftp_ReplyCode[0] > '2') {
     sockFile = -1;
@@ -193,5 +189,4 @@ void ftpSendList() {
   write(sockfd, buf, strlen(buf));
   // Recieving Status Response
   ftpSafeReadMessage(sockfd, buf, BUFSIZE);
-  printf("Reply code %s\n",ftp_ReplyCode);
 }

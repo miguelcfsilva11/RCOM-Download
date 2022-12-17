@@ -5,9 +5,7 @@
 
 #ifdef PRINT_COMMUNICATION
 #define print_communication(...) printf(__VA_ARGS__)
-#define print_reply(...)                                                       \
-  printf("%s", NICEPRINT);                                                     \
-  printf(__VA_ARGS__)
+#define print_reply(...) printf("%s", NICEPRINT);printf(__VA_ARGS__)
 #else
 #define print_communication(...)
 #define print_reply(...)

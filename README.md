@@ -62,6 +62,9 @@ Isto é tudo que um usuário do nosso cliente de ftp,
 precisa de saber pois o resto é abstraido e está contido em ficheiros de implementacao (`.c`) que
 contem a maior parte da complexidade do trabalho.
 
+
+## Recieving Multiline Messages
+
 # Download 
 
 Como providenciamos esta interface tão simples o seu uso acaba por ser bastante legível e idiomático:
